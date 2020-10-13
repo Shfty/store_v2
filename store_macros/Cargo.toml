@@ -1,0 +1,12 @@
+[package]
+name = "store_macros"
+version = "0.1.0"
+authors = ["Josh Palmer <jpalmerwatkins@gmail.com>"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies.syn]
+version = "1.0.44"
+features = ["full"]

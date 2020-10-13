@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+    "store",
+    "store_macros"
+]

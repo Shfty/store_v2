@@ -1,0 +1,48 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"command": "cargo build",
+			"label": "Rust: Build Debug"
+		},
+		{
+			"type": "shell",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build",
+			"command": "cargo build --release",
+			"label": "Rust: Build Release"
+		},
+		{
+			"type": "shell",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"command": "cargo test",
+			"label": "Rust: Run Tests"
+		},
+		{
+			"type": "shell",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "test",
+			"command": "cargo test",
+			"args": ["--", "--nocapture", "--test-threads=1"],
+			"label": "Rust: Run Tests (Show Output)"
+		}
+	]
+}
