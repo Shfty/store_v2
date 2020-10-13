@@ -46,7 +46,7 @@ impl<'a> Store {
         })
     }
 
-    fn has_storage_for<T>(&'a self) -> bool
+    pub fn has_storage_for<T>(&'a self) -> bool
     where
         T: Storable + 'static,
     {
