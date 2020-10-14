@@ -22,6 +22,7 @@ where
 {
     type Storage;
     type FieldTypes;
+    type Item;
 
     /// Iterates over fields that share common keys
     fn iter(&'a self) -> StoreFieldsIterator<Key, Self::Storage, Self::FieldTypes>;
@@ -31,6 +32,9 @@ where
         &'a self,
         keys: Vec<Key>,
     ) -> StoreFieldsIterator<Key, Self::Storage, Self::FieldTypes>;
+
+    /// Fetches a single set of fields by key
+    fn get(&'a self, key: Key) -> Self::Item;
 }
 
-impl_store_fields_iterator!(HashMap, 1..4);
+impl_store_fields_iterator!(HashMap, 1..6);

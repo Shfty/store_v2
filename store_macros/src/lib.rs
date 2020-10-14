@@ -338,6 +338,21 @@ fn impl_store_fields_inner(
                 )*
             );
 
+            type Item = (
+                #(
+                    std::cell::Ref<'a, #combo_ref_idents>,
+                )*
+                #(
+                    std::cell::RefMut<'a, #combo_mut_ref_idents>,
+                )*
+                #(
+                    Option<std::cell::Ref<'a, #combo_option_ref_idents>>,
+                )*
+                #(
+                    Option<std::cell::RefMut<'a, #combo_option_mut_ref_idents>>,
+                )*
+            );
+
             fn iter(&'a self) -> StoreFieldsIterator<Key, Self::Storage, Self::FieldTypes> {
                 let keys: Vec<Key>;
                 {
@@ -396,6 +411,52 @@ fn impl_store_fields_inner(
                     ),
                     _phantom: std::marker::PhantomData,
                 }
+            }
+
+            fn get(&'a self, key: Key) -> Self::Item {
+                #(
+                    let #ref_storage_vars = self.get_storage::<#ref_type_idents>();
+                )*
+                #(
+                    let #mut_ref_storage_vars = self.get_storage::<#mut_ref_type_idents>();
+                )*
+                #(
+                    let #option_ref_storage_vars = self.get_storage::<#option_ref_type_idents>();
+                )*
+                #(
+                    let #option_mut_ref_storage_vars = self.get_storage::<#option_mut_ref_type_idents>();
+                )*
+
+                (
+                    #(
+                        std::cell::Ref::map(#ref_storage_vars.borrow(), |storage| {
+                            storage.get(&key).unwrap()
+                        }),
+                    )*
+                    #(
+                        std::cell::RefMut::map(#mut_ref_storage_vars.borrow_mut(), |storage| {
+                            storage.get_mut(&key).unwrap()
+                        }),
+                    )*
+                    #(
+                        if #option_ref_storage_vars.borrow().contains_key(&key) {
+                            Some(std::cell::Ref::map(#option_ref_storage_vars.borrow(), |storage| {
+                                storage.get(&key).unwrap()
+                            }))
+                        } else {
+                            None
+                        },
+                    )*
+                    #(
+                        if #option_mut_ref_storage_vars.borrow_mut().contains_key(&key) {
+                            Some(std::cell::RefMut::map(#option_mut_ref_storage_vars.borrow_mut(), |storage| {
+                                storage.get_mut(&key).unwrap()
+                            }))
+                        } else {
+                            None
+                        },
+                    )*
+                )
             }
         }
     )
