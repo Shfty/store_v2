@@ -16,7 +16,7 @@ where
     _phantom: std::marker::PhantomData<FieldTypes>,
 }
 
-pub trait IterStoreFields<'a, Key, T>
+pub trait StoreQuery<'a, Key, T>
 where
     Key: Copy,
 {

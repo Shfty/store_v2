@@ -302,7 +302,7 @@ fn impl_store_fields_inner(
         }
 
         impl<'a, Key, #(#type_idents),*>
-            IterStoreFields<
+            StoreQuery<
                 'a,
                 Key,
                 (
@@ -384,7 +384,7 @@ fn impl_store_fields_inner(
                     keys = shared_keys;
                 }
 
-                IterStoreFields::<Key, (
+                StoreQuery::<Key, (
                     #(
                         std::cell::Ref<'a, #combo_ref_idents>,
                     )*
