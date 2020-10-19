@@ -8,4 +8,6 @@ edition = "2018"
 
 [dependencies]
 fnv = "1.0.7"
+lazy_static = "1.4.0"
 store_macros = { path = "../store_macros" }
+vec_map = { path = "../../vec_map" }
