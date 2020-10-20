@@ -247,8 +247,6 @@ fn impl_store_fields_inner(
                     .copied()
                     .collect();
 
-                keys.sort_unstable();
-                keys.dedup();
                 keys.reverse();
 
                 StoreIterator {
