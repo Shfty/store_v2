@@ -42,11 +42,11 @@ impl TypeKey {
     {
         let type_id = TypeId::of::<T>();
 
-        let sanitized_type_name = sanitize_type_name(std::any::type_name::<T>());
         SANITIZED_TYPE_NAMES
             .write()
             .unwrap()
-            .insert(type_id, sanitized_type_name);
+            .entry(type_id)
+            .or_insert_with(|| sanitize_type_name(std::any::type_name::<T>()));
 
         TypeKey(type_id)
     }
