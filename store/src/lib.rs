@@ -3,12 +3,14 @@ mod store_trait;
 mod store_query;
 mod type_key;
 mod typed_data;
+mod hash_map;
 
 pub use store_data::*;
 pub use store_trait::*;
 pub use store_query::*;
 pub use type_key::*;
 pub use typed_data::*;
+pub use hash_map::*;
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 struct SomeData<T>(pub T);

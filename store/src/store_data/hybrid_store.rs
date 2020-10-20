@@ -2,9 +2,7 @@
 
 use std::hash::Hash;
 
-use fnv::FnvHashMap;
-
-use crate::{BTreeMapKeys, HashMapKeys, StoreTrait, TypeKey};
+use crate::{BTreeMapKeys, HashMap, HashMapKeys, StoreTrait, TypeKey};
 
 use vec_map::{DenseVecMapKeys, SparseVecMapKeys};
 
@@ -80,7 +78,7 @@ pub struct HybridStore<Key>
 where
     Key: Copy + Ord + Into<usize>,
 {
-    type_map: FnvHashMap<TypeKey, StoreType>,
+    type_map: HashMap<TypeKey, StoreType>,
     btree_map_store: BTreeMapStore<Key>,
     hash_map_store: HashMapStore<Key>,
     sparse_vec_map_store: SparseVecMapStore<Key>,

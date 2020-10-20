@@ -1,7 +1,6 @@
-use fnv::FnvHashMap;
 use std::{cell::Ref, cell::RefCell, cell::RefMut, fmt::Debug, hash::Hash};
 
-use crate::{StoreTrait, TypedData};
+use crate::{HashMap, StoreTrait, TypedData};
 
 use super::{StoreData, TypeKey};
 
@@ -19,7 +18,7 @@ impl<'a, Key> Iterator for HashMapKeys<'a, Key> {
     }
 }
 
-pub struct HashMapStoreKeys<'a, Key>(pub Option<Ref<'a, FnvHashMap<Key, TypedData>>>)
+pub struct HashMapStoreKeys<'a, Key>(pub Option<Ref<'a, crate::HashMap<Key, TypedData>>>)
 where
     Key: 'static;
 
@@ -40,7 +39,7 @@ where
     }
 }
 
-pub type HashMapStore<Key> = StoreData<RefCell<FnvHashMap<Key, TypedData>>>;
+pub type HashMapStore<Key> = StoreData<RefCell<HashMap<Key, TypedData>>>;
 
 impl<Key> HashMapStore<Key>
 where

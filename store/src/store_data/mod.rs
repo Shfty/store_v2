@@ -1,23 +1,24 @@
-mod hash_map_store;
 mod btree_map_store;
-mod sparse_vec_map_store;
 mod dense_vec_map_store;
+mod hash_map_store;
 mod hybrid_store;
+mod sparse_vec_map_store;
 
-pub use hash_map_store::*;
 pub use btree_map_store::*;
-pub use sparse_vec_map_store::*;
 pub use dense_vec_map_store::*;
+pub use hash_map_store::*;
 pub use hybrid_store::*;
+pub use sparse_vec_map_store::*;
 
+use crate::HashMap;
 use std::{fmt::Debug, ops::Deref, ops::DerefMut};
-use fnv::FnvHashMap;
+
 use super::TypeKey;
 
 /// Associative type-keyed storage
 #[derive(Default)]
 pub struct StoreData<Storage> {
-    data: FnvHashMap<TypeKey, Storage>,
+    data: HashMap<TypeKey, Storage>,
 }
 
 impl<Storage> StoreData<Storage> {
@@ -43,7 +44,7 @@ where
 }
 
 impl<Storage> Deref for StoreData<Storage> {
-    type Target = FnvHashMap<TypeKey, Storage>;
+    type Target = HashMap<TypeKey, Storage>;
 
     fn deref(&self) -> &Self::Target {
         &self.data

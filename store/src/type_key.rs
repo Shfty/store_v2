@@ -1,13 +1,14 @@
 use std::{any::TypeId, fmt::Debug, sync::RwLock};
 
-use fnv::FnvHashMap;
 use std::ops::Deref;
 
 use lazy_static::lazy_static;
 
+use crate::HashMap;
+
 lazy_static! {
-    static ref SANITIZED_TYPE_NAMES: RwLock<FnvHashMap<TypeId, String>> =
-        RwLock::new(FnvHashMap::default());
+    static ref SANITIZED_TYPE_NAMES: RwLock<HashMap<TypeId, String>> =
+        RwLock::new(HashMap::default());
 }
 
 fn sanitize_type_name(string: &str) -> String {
