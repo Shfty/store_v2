@@ -180,13 +180,13 @@ fn impl_store_fields_inner(
                 #(Option<RefMut<'a, #combo_option_mut_ref_idents>>,)*
             ) {
                 #(
-                    let #ref_storage_vars = StoreTrait::get::<#combo_ref_idents>(self, key).expect(&format!("Supplied key has no {} fields", std::any::type_name::<#combo_ref_idents>()));
+                    let #ref_storage_vars = StoreTrait::get::<#combo_ref_idents>(self, key).unwrap_or_else(|| panic!("Supplied key has no {} fields", std::any::type_name::<#combo_ref_idents>()));
                 )*
                 #(
                     let #option_ref_storage_vars = StoreTrait::get::<#combo_option_ref_idents>(self, key);
                 )*
                 #(
-                    let #mut_ref_storage_vars = StoreTrait::get_mut::<#combo_mut_ref_idents>(self, key).expect(&format!("Supplied key has no {} fields", std::any::type_name::<#combo_mut_ref_idents>()));
+                    let #mut_ref_storage_vars = StoreTrait::get_mut::<#combo_mut_ref_idents>(self, key).unwrap_or_else(|| panic!("Supplied key has no {} fields", std::any::type_name::<#combo_mut_ref_idents>()));
                 )*
                 #(
                     let #option_mut_ref_storage_vars = StoreTrait::get_mut::<#combo_option_mut_ref_idents>(self, key);
@@ -281,13 +281,13 @@ fn impl_store_fields_inner(
             fn next(&mut self) -> Option<Self::Item> {
                 if let Some(key) = self.keys.pop() {
                     #(
-                        let #ref_storage_vars = StoreTrait::get::<#combo_ref_idents>(self.store, key).expect(&format!("Supplied key has no {} fields", std::any::type_name::<#combo_ref_idents>()));
+                        let #ref_storage_vars = StoreTrait::get::<#combo_ref_idents>(self.store, key).unwrap_or_else(|| panic!("Supplied key has no {} fields", std::any::type_name::<#combo_ref_idents>()));
                     )*
                     #(
                         let #option_ref_storage_vars = StoreTrait::get::<#combo_option_ref_idents>(self.store, key);
                     )*
                     #(
-                        let #mut_ref_storage_vars = StoreTrait::get_mut::<#combo_mut_ref_idents>(self.store, key).expect(&format!("Supplied key has no {} fields", std::any::type_name::<#combo_mut_ref_idents>()));
+                        let #mut_ref_storage_vars = StoreTrait::get_mut::<#combo_mut_ref_idents>(self.store, key).unwrap_or_else(|| panic!("Supplied key has no {} fields", std::any::type_name::<#combo_mut_ref_idents>()));
                     )*
                     #(
                         let #option_mut_ref_storage_vars = StoreTrait::get_mut::<#combo_option_mut_ref_idents>(self.store, key);
