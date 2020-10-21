@@ -34,7 +34,7 @@ fn sanitize_type_name(string: &str) -> String {
 
 /// Introspective type-backed key
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct TypeKey(TypeId);
+pub struct TypeKey(TypeId, &'static str);
 
 impl TypeKey {
     pub fn of<T>() -> Self
@@ -42,26 +42,22 @@ impl TypeKey {
         T: 'static,
     {
         let type_id = TypeId::of::<T>();
-
-        SANITIZED_TYPE_NAMES
-            .write()
-            .unwrap()
-            .entry(type_id)
-            .or_insert_with(|| sanitize_type_name(std::any::type_name::<T>()));
-
-        TypeKey(type_id)
+        let type_name = std::any::type_name::<T>();
+        TypeKey(type_id, type_name)
     }
 
     pub fn get_name(&self) -> &str {
-        let sanitized_type_names = SANITIZED_TYPE_NAMES.read().unwrap();
-        let sanitized_type_name = sanitized_type_names.get(&self).unwrap().as_str();
+        let mut sanitized_type_names = SANITIZED_TYPE_NAMES.write().unwrap();
 
-        let name: &str;
+        let sanitized_type_name: &str = sanitized_type_names
+            .entry(self.0)
+            .or_insert_with(|| sanitize_type_name(self.1))
+            .as_str();
+
         unsafe {
             let type_string = sanitized_type_name as *const str;
-            name = &*type_string;
+            &*type_string
         }
-        name
     }
 }
 
