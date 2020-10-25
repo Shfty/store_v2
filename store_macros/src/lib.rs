@@ -50,8 +50,9 @@ pub fn impl_store_fields_iterator(input: TokenStream) -> TokenStream {
         .collect();
 
     let combos_tokens: Vec<TokenStream2> = (range_from..=range_to)
-        .flat_map(|i| combinate_with_repitition((0..4).collect::<Vec<usize>>(), i))
+        .flat_map(|i| combinate_with_repitition((0..5).collect::<Vec<usize>>(), i))
         .map(|combo| {
+            let mut no_field_idents: Vec<&Ident> = Vec::new();
             let mut combo_ref_idents: Vec<&Ident> = Vec::new();
             let mut combo_option_ref_idents: Vec<&Ident> = Vec::new();
             let mut combo_mut_ref_idents: Vec<&Ident> = Vec::new();
@@ -61,14 +62,16 @@ pub fn impl_store_fields_iterator(input: TokenStream) -> TokenStream {
                 .into_iter()
                 .enumerate()
                 .for_each(|(idx, ptr)| match ptr {
-                    0 => combo_ref_idents.push(&type_idents[idx]),
-                    1 => combo_option_ref_idents.push(&type_idents[idx]),
-                    2 => combo_mut_ref_idents.push(&type_idents[idx]),
-                    3 => combo_option_mut_ref_idents.push(&type_idents[idx]),
+                    0 => no_field_idents.push(&type_idents[idx]),
+                    1 => combo_ref_idents.push(&type_idents[idx]),
+                    2 => combo_option_ref_idents.push(&type_idents[idx]),
+                    3 => combo_mut_ref_idents.push(&type_idents[idx]),
+                    4 => combo_option_mut_ref_idents.push(&type_idents[idx]),
                     _ => panic!("Unrecognized variant index"),
                 });
 
             impl_store_fields_inner(
+                no_field_idents,
                 combo_ref_idents,
                 combo_option_ref_idents,
                 combo_mut_ref_idents,
@@ -109,16 +112,18 @@ fn combinate_with_repitition(options: Vec<usize>, length: usize) -> Vec<Vec<usiz
 }
 
 fn impl_store_fields_inner(
-    combo_ref_idents: Vec<&Ident>,
-    combo_option_ref_idents: Vec<&Ident>,
-    combo_mut_ref_idents: Vec<&Ident>,
-    combo_option_mut_ref_idents: Vec<&Ident>,
+    no_field_idents: Vec<&Ident>,
+    ref_idents: Vec<&Ident>,
+    option_ref_idents: Vec<&Ident>,
+    mut_ref_idents: Vec<&Ident>,
+    option_mut_ref_idents: Vec<&Ident>,
 ) -> TokenStream2 {
-    let type_idents: Vec<&Ident> = combo_ref_idents
+    let type_idents: Vec<&Ident> = no_field_idents
         .iter()
-        .chain(combo_option_ref_idents.iter())
-        .chain(combo_mut_ref_idents.iter())
-        .chain(combo_option_mut_ref_idents.iter())
+        .chain(ref_idents.iter())
+        .chain(option_ref_idents.iter())
+        .chain(mut_ref_idents.iter())
+        .chain(option_mut_ref_idents.iter())
         .copied()
         .collect();
 
@@ -126,174 +131,147 @@ fn impl_store_fields_inner(
         .map(|i| syn::Ident::new(&format!("t{}", i), Span::call_site()))
         .collect();
 
-    let (ref_storage_vars, sv) = storage_vars.split_at(combo_ref_idents.len());
-    let (option_ref_storage_vars, sv) = sv.split_at(combo_option_ref_idents.len());
-    let (mut_ref_storage_vars, option_mut_ref_storage_vars) =
-        sv.split_at(combo_mut_ref_idents.len());
-
-    let first_storage_var = &storage_vars[0];
-    let remaining_storage_vars: Vec<&Ident> = if storage_vars.len() > 1 {
-        storage_vars[1..].iter().collect()
-    } else {
-        vec![]
-    };
-
-    let concrete_idents: Vec<&Ident> = combo_ref_idents
-        .iter()
-        .chain(combo_mut_ref_idents.iter())
-        .copied()
-        .collect();
-
-    let filter_routine = if ref_storage_vars.len() + mut_ref_storage_vars.len() > 0 {
-        quote!(
-            .filter(|key| {
-                #(
-                    StoreTrait::contains_type_key::<#concrete_idents>(self, key)
-                )&&*
-            })
-        )
-    } else {
-        quote!()
-    };
+    let (_, sv) = storage_vars.split_at(no_field_idents.len());
+    let (ref_storage_vars, sv) = sv.split_at(ref_idents.len());
+    let (option_ref_storage_vars, sv) = sv.split_at(option_ref_idents.len());
+    let (mut_ref_storage_vars, option_mut_ref_storage_vars) = sv.split_at(mut_ref_idents.len());
 
     quote!(
         impl<'a, Key, #(#type_idents),*> StoreQuery<'a, (
             Key,
-            #(Ref<'a, #combo_ref_idents>,)*
-            #(Option<Ref<'a, #combo_option_ref_idents>>,)*
-            #(RefMut<'a, #combo_mut_ref_idents>,)*
-            #(Option<RefMut<'a, #combo_option_mut_ref_idents>>,)*
-        )> for HybridStore<Key>
+            #(NoField<#no_field_idents>,)*
+            #(Ref<'a, #ref_idents>,)*
+            #(Option<Ref<'a, #option_ref_idents>>,)*
+            #(RefMut<'a, #mut_ref_idents>,)*
+            #(Option<RefMut<'a, #option_mut_ref_idents>>,)*
+        )> for Store<Key>
         where
-            Key: Default + Copy + Ord + Hash + Into<usize> + 'static,
+            Key: Debug + Default + Copy + Ord + Hash + From<u32> + Into<u32> + 'static,
             #(
                 #type_idents: 'static,
             )*
         {
             type Key = Key;
 
-            fn get(&'a self, key: Key) -> (
+            fn get(&'a self, key: &Key) -> (
                 Key,
-                #(Ref<'a, #combo_ref_idents>,)*
-                #(Option<Ref<'a, #combo_option_ref_idents>>,)*
-                #(RefMut<'a, #combo_mut_ref_idents>,)*
-                #(Option<RefMut<'a, #combo_option_mut_ref_idents>>,)*
+                #(NoField<#no_field_idents>,)*
+                #(Ref<'a, #ref_idents>,)*
+                #(Option<Ref<'a, #option_ref_idents>>,)*
+                #(RefMut<'a, #mut_ref_idents>,)*
+                #(Option<RefMut<'a, #option_mut_ref_idents>>,)*
             ) {
                 #(
-                    let #ref_storage_vars = StoreTrait::get::<#combo_ref_idents>(self, key).unwrap_or_else(|| panic!("Supplied key has no {} fields", std::any::type_name::<#combo_ref_idents>()));
-                )*
-                #(
-                    let #option_ref_storage_vars = StoreTrait::get::<#combo_option_ref_idents>(self, key);
-                )*
-                #(
-                    let #mut_ref_storage_vars = StoreTrait::get_mut::<#combo_mut_ref_idents>(self, key).unwrap_or_else(|| panic!("Supplied key has no {} fields", std::any::type_name::<#combo_mut_ref_idents>()));
-                )*
-                #(
-                    let #option_mut_ref_storage_vars = StoreTrait::get_mut::<#combo_option_mut_ref_idents>(self, key);
+                    assert!(!self.contains_type_key::<#no_field_idents>(key));
                 )*
 
-                (key, #(#storage_vars),*)
+                #(
+                    let #ref_storage_vars = self.get::<#ref_idents>(key).unwrap_or_else(|| panic!("Supplied key has no {} fields", std::any::type_name::<#ref_idents>()));
+                )*
+                #(
+                    let #option_ref_storage_vars = self.get::<#option_ref_idents>(key);
+                )*
+                #(
+                    let #mut_ref_storage_vars = self.get_mut::<#mut_ref_idents>(key).unwrap_or_else(|| panic!("Supplied key has no {} fields", std::any::type_name::<#mut_ref_idents>()));
+                )*
+                #(
+                    let #option_mut_ref_storage_vars = self.get_mut::<#option_mut_ref_idents>(key);
+                )*
+
+                (*key #(, NoField::<#no_field_idents>::default())* #(, #ref_storage_vars)* #(, #option_ref_storage_vars)* #(, #mut_ref_storage_vars)* #(, #option_mut_ref_storage_vars)*)
             }
 
             fn iter(&'a self) -> StoreIterator<Key, (
                 Key,
-                #(Ref<'a, #combo_ref_idents>,)*
-                #(Option<Ref<'a, #combo_option_ref_idents>>,)*
-                #(RefMut<'a, #combo_mut_ref_idents>,)*
-                #(Option<RefMut<'a, #combo_option_mut_ref_idents>>,)*
+                #(NoField<#no_field_idents>,)*
+                #(Ref<'a, #ref_idents>,)*
+                #(Option<Ref<'a, #option_ref_idents>>,)*
+                #(RefMut<'a, #mut_ref_idents>,)*
+                #(Option<RefMut<'a, #option_mut_ref_idents>>,)*
             )> {
+                let mut keys = self.keys_all();
+
                 #(
-                    let #ref_storage_vars = StoreTrait::keys::<#combo_ref_idents>(self);
-                )*
-                #(
-                    let #option_ref_storage_vars = StoreTrait::keys::<#combo_option_ref_idents>(self);
-                )*
-                #(
-                    let #mut_ref_storage_vars = StoreTrait::keys::<#combo_mut_ref_idents>(self);
-                )*
-                #(
-                    let #option_mut_ref_storage_vars = StoreTrait::keys::<#combo_option_mut_ref_idents>(self);
+                    keys &= &(!self.keys::<#no_field_idents>());
                 )*
 
-                let mut keys: Vec<Key> = #first_storage_var
-                    .into_iter()
-                    #(
-                        .chain(#remaining_storage_vars.into_iter())
-                    )*
-                    #filter_routine
-                    .copied()
-                    .collect();
+                #(
+                    keys &= &(self.keys::<#ref_idents>());
+                )*
 
-                keys.sort_unstable();
-                keys.dedup();
-                keys.reverse();
+                #(
+                    keys &= &(self.keys::<#mut_ref_idents>());
+                )*
 
                 StoreIterator {
                     store: self,
-                    keys,
+                    keys: keys.into_iter(),
                     _phantom_data: PhantomData,
                 }
             }
 
-            fn iter_keys(&'a self, keys: &[Key]) -> StoreIterator<Key, (
+            fn iter_keys(&'a self, keys: &'a [Key]) -> StoreIterator<Key, (
                 Key,
-                #(Ref<'a, #combo_ref_idents>,)*
-                #(Option<Ref<'a, #combo_option_ref_idents>>,)*
-                #(RefMut<'a, #combo_mut_ref_idents>,)*
-                #(Option<RefMut<'a, #combo_option_mut_ref_idents>>,)*
+                #(NoField<#no_field_idents>,)*
+                #(Ref<'a, #ref_idents>,)*
+                #(Option<Ref<'a, #option_ref_idents>>,)*
+                #(RefMut<'a, #mut_ref_idents>,)*
+                #(Option<RefMut<'a, #option_mut_ref_idents>>,)*
             )> {
-                let mut keys: Vec<Key> = keys
-                    .into_iter()
-                    .copied()
-                    .collect();
-
-                keys.reverse();
+                let mut bit_set = BitSet::new();
+                for key in keys {
+                    bit_set.add((*key).into());
+                }
 
                 StoreIterator {
                     store: self,
-                    keys,
+                    keys: bit_set.into_iter(),
                     _phantom_data: PhantomData,
                 }
             }
         }
 
         impl<'a, Key, #(#type_idents),*> Iterator for StoreIterator<'a, Key, (
-            Key,
-            #(Ref<'a, #combo_ref_idents>,)*
-            #(Option<Ref<'a, #combo_option_ref_idents>>,)*
-            #(RefMut<'a, #combo_mut_ref_idents>,)*
-            #(Option<RefMut<'a, #combo_option_mut_ref_idents>>,)*
+           Key,
+            #(NoField<#no_field_idents>,)*
+            #(Ref<'a, #ref_idents>,)*
+            #(Option<Ref<'a, #option_ref_idents>>,)*
+            #(RefMut<'a, #mut_ref_idents>,)*
+            #(Option<RefMut<'a, #option_mut_ref_idents>>,)*
         )>
         where
-            Key: Default + Copy + Ord + Into<usize> + Hash + 'static,
+            Key: Default + Copy + Ord + Hash + From<u32> + Into<u32> + 'static,
             #(
                 #type_idents: 'static,
             )*
         {
             type Item = (
                 Key,
-                #(Ref<'a, #combo_ref_idents>,)*
-                #(Option<Ref<'a, #combo_option_ref_idents>>,)*
-                #(RefMut<'a, #combo_mut_ref_idents>,)*
-                #(Option<RefMut<'a, #combo_option_mut_ref_idents>>,)*
+                #(NoField<#no_field_idents>,)*
+                #(Ref<'a, #ref_idents>,)*
+                #(Option<Ref<'a, #option_ref_idents>>,)*
+                #(RefMut<'a, #mut_ref_idents>,)*
+                #(Option<RefMut<'a, #option_mut_ref_idents>>,)*
             );
 
             fn next(&mut self) -> Option<Self::Item> {
-                if let Some(key) = self.keys.pop() {
+                if let Some(key) = self.keys.next() {
+                    let key: Key = key.into();
+
                     #(
-                        let #ref_storage_vars = StoreTrait::get::<#combo_ref_idents>(self.store, key).unwrap_or_else(|| panic!("Supplied key has no {} fields", std::any::type_name::<#combo_ref_idents>()));
+                        let #ref_storage_vars = self.store.get::<#ref_idents>(&key).unwrap_or_else(|| panic!("Supplied key has no {} fields", std::any::type_name::<#ref_idents>()));
                     )*
                     #(
-                        let #option_ref_storage_vars = StoreTrait::get::<#combo_option_ref_idents>(self.store, key);
+                        let #option_ref_storage_vars = self.store.get::<#option_ref_idents>(&key);
                     )*
                     #(
-                        let #mut_ref_storage_vars = StoreTrait::get_mut::<#combo_mut_ref_idents>(self.store, key).unwrap_or_else(|| panic!("Supplied key has no {} fields", std::any::type_name::<#combo_mut_ref_idents>()));
+                        let #mut_ref_storage_vars = self.store.get_mut::<#mut_ref_idents>(&key).unwrap_or_else(|| panic!("Supplied key has no {} fields", std::any::type_name::<#mut_ref_idents>()));
                     )*
                     #(
-                        let #option_mut_ref_storage_vars = StoreTrait::get_mut::<#combo_option_mut_ref_idents>(self.store, key);
+                        let #option_mut_ref_storage_vars = self.store.get_mut::<#option_mut_ref_idents>(&key);
                     )*
 
-                    Some((key, #(#storage_vars),*))
+                    Some((key #(, NoField::<#no_field_idents>::default())* #(, #ref_storage_vars)* #(, #option_ref_storage_vars)* #(, #mut_ref_storage_vars)* #(, #option_mut_ref_storage_vars)*))
                 } else {
                     None
                 }

@@ -1,48 +1,106 @@
 use std::{
     cell::{Ref, RefMut},
+    fmt::Debug,
     hash::Hash,
     marker::PhantomData,
 };
 
-use super::{HybridStore, StoreTrait};
+// TODO: Tidy up store implementation
+//       Minimize code repetition - i.e. extract shared parts from match clauses
+//       Decide whether creating a trait for StoreBacking is worthwhile vs explicit enum work
+//          StorageTrait currently only used as a constraint for StorageBacking
+//          Can probably leverage closures to bridge storage types and make enums more workable
+
+// TODO: Tidy up SparseVecMap removal strategy
+//       Should probably track swap-removes via an internal BitSet to allow transparent usage
+
+use crate::{Store, TypeKey};
+
+use hibitset::{BitIter, BitSet};
+use store_macros::impl_store_fields_iterator;
 
 // Core Types
-pub trait StoreQuery<'a, Signature> {
-    type Key: Copy + Ord + Into<usize>;
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub struct NoField<T>(TypeKey, PhantomData<T>);
 
-    fn get(&'a self, key: Self::Key) -> Signature;
+impl<T> Default for NoField<T>
+where
+    T: 'static,
+{
+    fn default() -> Self {
+        NoField(TypeKey::of::<T>(), PhantomData)
+    }
+}
+
+impl<T> Debug for NoField<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("NoField").field(&self.0).finish()
+    }
+}
+
+pub trait StoreQuery<'a, Signature>
+where
+    Self::Key: Copy + Ord + From<u32> + Into<u32> + Hash,
+{
+    type Key;
+
+    fn get(&'a self, key: &Self::Key) -> Signature;
     fn iter(&'a self) -> StoreIterator<Self::Key, Signature>;
-    fn iter_keys(&'a self, keys: &[Self::Key]) -> StoreIterator<Self::Key, Signature>;
+    fn iter_keys(&'a self, keys: &'a [Self::Key]) -> StoreIterator<Self::Key, Signature>;
 }
 
 pub struct StoreIterator<'a, Key, Signature>
 where
-    Key: Copy + Ord + Into<usize>,
+    Key: Copy + Eq + Ord + Hash + From<u32> + Into<u32> + 'static,
 {
-    store: &'a HybridStore<Key>,
-    keys: Vec<Key>,
+    store: &'a Store<Key>,
+    keys: BitIter<BitSet>,
     _phantom_data: PhantomData<Signature>,
 }
-
-use store_macros::impl_store_fields_iterator;
 
 impl_store_fields_iterator!(1..6);
 
 // Tests
 #[cfg(test)]
 mod tests {
-    use crate::{StoreType, SomeData};
+    use crate::{SomeData, StorageType};
 
     use super::*;
 
     #[test]
-    fn get() {
-        let mut store = HybridStore::<usize>::default();
+    fn debug() {
+        let mut store = Store::<u32>::default();
 
-        store.register_type_storage::<bool>(StoreType::SparseVecMap);
-        store.register_type_storage::<i32>(StoreType::DenseVecMap);
-        store.register_type_storage::<&'static str>(StoreType::BTreeMap);
-        store.register_type_storage::<SomeData<String>>(StoreType::HashMap);
+        store.register_storage_type_for::<SomeData<String>>(StorageType::BTreeMap);
+
+        store.insert(0, false);
+        store.insert(1, true);
+        store.insert(2, true);
+        store.insert(3, false);
+
+        store.insert(0, "Hello");
+        store.insert(1, "World");
+        store.insert(2, "Goodbye");
+        store.insert(3, "Farewell");
+
+        //store.insert(0, 0);
+        store.insert(1, 2);
+        store.insert(2, 4);
+        //store.insert(3, 6);
+
+        //store.insert(0, SomeData("Ahoy".to_string()));
+        store.insert(1, SomeData("Matey".to_string()));
+        //store.insert(2, SomeData("Avast Ye".to_string()));
+        store.insert(3, SomeData("Landlubbers".to_string()));
+
+        println!("\nStore: {:#?}\n", store);
+    }
+
+    #[test]
+    fn get() {
+        let mut store = Store::<u32>::default();
+
+        store.register_storage_type_for::<SomeData<String>>(StorageType::BTreeMap);
 
         store.insert(0, false);
         store.insert(1, true);
@@ -66,52 +124,52 @@ mod tests {
 
         {
             let query = StoreQuery::<(
-                usize,
+                u32,
+                NoField<i32>,
                 Ref<bool>,
-                Option<Ref<i32>>,
                 RefMut<&'static str>,
                 Option<RefMut<SomeData<String>>>,
-            )>::get(&store, 0);
+            )>::get(&store, &0);
             println!("0: {:?}", query);
         }
 
         {
             let query = StoreQuery::<(
-                usize,
+                u32,
                 Ref<bool>,
                 Option<Ref<i32>>,
                 RefMut<&'static str>,
                 Option<RefMut<SomeData<String>>>,
-            )>::get(&store, 1);
+            )>::get(&store, &1);
             println!("1: {:?}", query);
         }
 
         {
             let query = StoreQuery::<(
-                usize,
+                u32,
+                NoField<SomeData<String>>,
                 Ref<bool>,
                 Option<Ref<i32>>,
                 RefMut<&'static str>,
-                Option<RefMut<SomeData<String>>>,
-            )>::get(&store, 2);
+            )>::get(&store, &2);
             println!("2: {:?}", query);
         }
 
         {
             let query = StoreQuery::<(
-                usize,
+                u32,
+                NoField<i32>,
                 Ref<bool>,
-                Option<Ref<i32>>,
                 RefMut<&'static str>,
                 Option<RefMut<SomeData<String>>>,
-            )>::get(&store, 3);
+            )>::get(&store, &3);
             println!("3: {:?}", query);
         }
     }
 
     #[test]
     fn iter() {
-        let mut store = HybridStore::<usize>::default();
+        let mut store = Store::<u32>::default();
 
         store.insert(0, false);
         store.insert(1, true);
@@ -136,7 +194,7 @@ mod tests {
         println!();
         println!("Arity 4:");
         StoreQuery::<(
-            usize,
+            u32,
             Ref<bool>,
             Option<Ref<i32>>,
             RefMut<&'static str>,
@@ -146,7 +204,12 @@ mod tests {
 
         println!();
         println!("Arity 2:");
-        StoreQuery::<(usize, Ref<bool>, RefMut<&'static str>)>::iter(&store)
+        StoreQuery::<(u32, Ref<bool>, RefMut<&'static str>)>::iter(&store)
+            .for_each(|result| println!("Result: {:?}", result));
+
+        println!();
+        println!("NoField<i32>:");
+        StoreQuery::<(u32, NoField<i32>)>::iter(&store)
             .for_each(|result| println!("Result: {:?}", result));
     }
 }

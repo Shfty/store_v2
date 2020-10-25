@@ -1,20 +1,21 @@
-mod store_data;
-mod store_trait;
+mod collections;
+mod storage;
+mod store_impl;
 mod store_query;
 mod type_key;
 mod typed_data;
-mod hash_map;
 
-pub use store_data::*;
-pub use store_trait::*;
+pub use collections::*;
+pub use storage::*;
+pub use store_impl::*;
 pub use store_query::*;
 pub use type_key::*;
 pub use typed_data::*;
-pub use hash_map::*;
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 struct SomeData<T>(pub T);
 
+/*
 #[cfg(test)]
 pub mod tests {
     use std::fmt::Debug;
@@ -23,7 +24,7 @@ pub mod tests {
 
     fn test_insert<'a, T>(store: &mut T)
     where
-        T: Debug + Default + StoreTrait<'a, Key = usize>,
+        T: Debug + Default + StorageTrait'a, Key = usize>,
     {
         store.insert(5, "Goodbye");
         store.insert(2, "World");
@@ -46,7 +47,7 @@ pub mod tests {
 
     fn test_remove<'a, T>(store: &mut T)
     where
-        T: Debug + Default + StoreTrait<'a, Key = usize>,
+        T: Debug + Default + StorageTraitKey = usize>,
     {
         store.remove::<bool>(&0usize);
         store.remove::<i32>(&0usize);
@@ -63,7 +64,7 @@ pub mod tests {
 
     fn test_remove_key<'a, T>(store: &mut T)
     where
-        T: Debug + Default + StoreTrait<'a, Key = usize>,
+        T: Debug + Default + StorageTraitKey = usize>,
     {
         store.remove_key(&2usize);
         println!("{:#?}\n", store);
@@ -71,7 +72,7 @@ pub mod tests {
 
     fn test_clear<'a, T>(store: &mut T)
     where
-        T: Debug + Default + StoreTrait<'a, Key = usize>,
+        T: Debug + Default + StorageTraitKey = usize>,
     {
         store.clear();
         println!("{:#?}\n\n", store);
@@ -79,7 +80,7 @@ pub mod tests {
 
     fn test_store<'a, T>(store: &mut T)
     where
-        T: Debug + Default + StoreTrait<'a, Key = usize>,
+        T: Debug + Default + StorageTraitKey = usize>,
     {
         println!("{:#?}\n", store);
 
@@ -123,3 +124,4 @@ pub mod tests {
         test_store(&mut store);
     }
 }
+*/
