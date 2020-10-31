@@ -1,0 +1,8 @@
+[package]
+name = "store_benchmark"
+version = "0.1.0"
+authors = ["Josh Palmer <jpalmerwatkins@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+store = { path = "../store" }

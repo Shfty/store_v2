@@ -5,15 +5,6 @@ use std::{
     marker::PhantomData,
 };
 
-// TODO: Tidy up store implementation
-//       Minimize code repetition - i.e. extract shared parts from match clauses
-//       Decide whether creating a trait for StoreBacking is worthwhile vs explicit enum work
-//          StorageTrait currently only used as a constraint for StorageBacking
-//          Can probably leverage closures to bridge storage types and make enums more workable
-
-// TODO: Tidy up SparseVecMap removal strategy
-//       Should probably track swap-removes via an internal BitSet to allow transparent usage
-
 use crate::{Store, TypeKey};
 
 use hibitset::{BitIter, BitSet};
@@ -40,7 +31,7 @@ impl<T> Debug for NoField<T> {
 
 pub trait StoreQuery<'a, Signature>
 where
-    Self::Key: Copy + Ord + From<u32> + Into<u32> + Hash,
+    Self::Key: Debug + Copy + Ord + From<u32> + Into<u32> + Hash,
 {
     type Key;
 
@@ -51,7 +42,7 @@ where
 
 pub struct StoreIterator<'a, Key, Signature>
 where
-    Key: Copy + Eq + Ord + Hash + From<u32> + Into<u32> + 'static,
+    Key: Debug + Copy + Eq + Ord + Hash + From<u32> + Into<u32> + 'static,
 {
     store: &'a Store<Key>,
     keys: BitIter<BitSet>,
@@ -63,7 +54,7 @@ impl_store_fields_iterator!(1..6);
 // Tests
 #[cfg(test)]
 mod tests {
-    use crate::{SomeData, StorageType};
+    use crate::SomeData;
 
     use super::*;
 
@@ -71,7 +62,7 @@ mod tests {
     fn debug() {
         let mut store = Store::<u32>::default();
 
-        store.register_storage_type_for::<SomeData<String>>(StorageType::BTreeMap);
+        //store.register_storage_type_for::<SomeData<String>>(StorageType::BTreeMap);
 
         store.insert(0, false);
         store.insert(1, true);
@@ -100,7 +91,7 @@ mod tests {
     fn get() {
         let mut store = Store::<u32>::default();
 
-        store.register_storage_type_for::<SomeData<String>>(StorageType::BTreeMap);
+        //store.register_storage_type_for::<SomeData<String>>(StorageType::BTreeMap);
 
         store.insert(0, false);
         store.insert(1, true);

@@ -1,13 +1,17 @@
+mod assemblage;
 mod collections;
 mod storage;
 mod store_impl;
+mod store_key;
 mod store_query;
 mod type_key;
 mod typed_data;
 
+pub use assemblage::*;
 pub use collections::*;
 pub use storage::*;
 pub use store_impl::*;
+pub use store_key::*;
 pub use store_query::*;
 pub use type_key::*;
 pub use typed_data::*;

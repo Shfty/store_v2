@@ -1,6 +1,9 @@
-use std::{any::TypeId, fmt::Debug, sync::RwLock};
-
-use std::ops::Deref;
+use std::{
+    any::TypeId,
+    fmt::Debug,
+    hash::Hash,
+    sync::RwLock,
+};
 
 use lazy_static::lazy_static;
 
@@ -33,8 +36,40 @@ fn sanitize_type_name(string: &str) -> String {
 }
 
 /// Introspective type-backed key
-#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone)]
 pub struct TypeKey(TypeId, &'static str);
+
+impl Debug for TypeKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.get_name())
+    }
+}
+
+impl PartialEq for TypeKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.eq(&other.0)
+    }
+}
+
+impl Eq for TypeKey {}
+
+impl PartialOrd for TypeKey {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(&other.0)
+    }
+}
+
+impl Ord for TypeKey {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.0.cmp(&other.0)
+    }
+}
+
+impl Hash for TypeKey {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.hash(state)
+    }
+}
 
 impl TypeKey {
     pub fn of<T>() -> Self
@@ -58,19 +93,5 @@ impl TypeKey {
             let type_string = sanitized_type_name as *const str;
             &*type_string
         }
-    }
-}
-
-impl Debug for TypeKey {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.get_name())
-    }
-}
-
-impl Deref for TypeKey {
-    type Target = TypeId;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
     }
 }

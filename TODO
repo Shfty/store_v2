@@ -1,0 +1,24 @@
+TODO:   Tidy up SparseVecMap insertion/removal strategy
+        Should probably track swap-removes via an internal BitSet to allow transparent usage
+
+TODO:   Remove contains_key gate on insert/remove for SparseVecMap when insert/remove is fixed
+
+TODO:   Boxing individual items (TypedData) instead of their containers is suboptimal
+            Should be RefCell<Box<dyn Any>> where dyn Any is a storage backing with explicit value type
+        However, TypedData currently forms the basis of Store's debugging functionality
+            Need to be able to iterate over a set of opaque type-erased structs for debug printing
+            
+TODO: Move TypeKey and TypedData into their own crate
+
+TODO:   Implement UnitStorage for holding zero-sized types
+        Will need to have it manage an internal BitSet for key checking and generate instances of the type when requested
+
+TODO:   Reimplement DenseVecStorage
+
+TODO:   Implement DefaultVecStorage
+        Same basic logic as SparseVecStorage, but empty indices are occupied with V::default()
+
+TODO:   Further automate component storage selection
+            SparseVecMap - Components smaller than a usize
+            DenseVecMap - Components <= 256kb (common L2 cache size)
+            HashMap - Components > 256kb

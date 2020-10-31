@@ -2,5 +2,9 @@
 
 members = [
     "store",
-    "store_macros"
+    "store_macros",
+    "store_benchmark"
 ]
+
+[profile.release]
+debug = true

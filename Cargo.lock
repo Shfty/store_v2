@@ -193,6 +193,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "store_benchmark"
+version = "0.1.0"
+dependencies = [
+ "store",
+]
+
+[[package]]
 name = "store_macros"
 version = "0.1.0"
 dependencies = [
