@@ -21,6 +21,20 @@ impl TypedData {
             fmt: Box::new(|type_data, f| type_data.data.downcast_ref::<T>().unwrap().fmt(f)),
         }
     }
+
+    pub fn downcast<T>(&self) -> Option<&T>
+    where
+        T: 'static,
+    {
+        self.data.downcast_ref::<T>()
+    }
+
+    pub fn downcast_mut<T>(&mut self) -> Option<&mut T>
+    where
+        T: 'static,
+    {
+        self.data.downcast_mut::<T>()
+    }
 }
 
 impl<'a> Debug for TypedData {

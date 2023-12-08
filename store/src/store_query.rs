@@ -54,7 +54,9 @@ impl_store_fields_iterator!(1..6);
 // Tests
 #[cfg(test)]
 mod tests {
-    use crate::SomeData;
+
+    #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+    struct SomeData<T>(pub T);
 
     use super::*;
 

@@ -6,9 +6,11 @@ pub use btree_map::*;
 pub use hash_map::*;
 pub use sparse_vec_map::*;
 
+use crate::StoreKey;
+
 /// Trait for an associative container that can store multiple types
 pub trait StorageTrait {
-    type Key;
+    type Key: StoreKey;
     type Value;
 
     fn get(&self, key: &Self::Key) -> Option<&Self::Value>;

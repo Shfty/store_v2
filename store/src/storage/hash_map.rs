@@ -1,11 +1,9 @@
-use std::hash::Hash;
-
-use crate::{StorageTrait, HashMap};
+use crate::{HashMap, StorageTrait, StoreKey};
 
 /// HashMap-backed associative container for storing multiple types
 impl<Key, Value> StorageTrait for HashMap<Key, Value>
 where
-    Key: Eq + Hash + 'static,
+    Key: StoreKey,
 {
     type Key = Key;
     type Value = Value;

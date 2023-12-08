@@ -1,11 +1,9 @@
-use crate::StorageTrait;
-
-use crate::SparseVecMap;
+use crate::{SparseVecMap, StorageTrait, StoreKey};
 
 /// Vec-backed associative container for storing multiple types
 impl<Key, Value> StorageTrait for SparseVecMap<Key, Value>
 where
-    Key: Copy + Into<u32> + 'static,
+    Key: StoreKey,
 {
     type Key = Key;
     type Value = Value;

@@ -1,11 +1,9 @@
-use std::collections::BTreeMap;
-
-use crate::StorageTrait;
+use crate::{BTreeMap, StorageTrait, StoreKey};
 
 /// BTreeMap-backed associative container for storing multiple types
 impl<Key, Value> StorageTrait for BTreeMap<Key, Value>
 where
-    Key: Ord,
+    Key: StoreKey,
 {
     type Key = Key;
     type Value = Value;
